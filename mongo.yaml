@@ -1,0 +1,104 @@
+# Deployment and Service comp for MongoDB
+# Er vanlig å ha Deployment og Service i samme fil, siden de hører sammen
+
+# Deployment config
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo-deployment
+  # ? 1.1 Labels er dypere forklart lenger nede
+  labels:
+    app: mongo
+# Specification for Deployment
+spec:
+  # Hvor mange duplicates vil vi lage av denne deploymenten?
+  replicas: 1
+  # ? 2.1 Selector dypere forklart lenger nede
+  selector:
+    # Leter etter Pods som MATCHER med denne labelen gitt nede
+    matchLabels:
+      app: mongo
+  # Config for Pod - Husk Deployment håndterer Pods
+  # MERK: Pod har sin egen "metadata" og "spec", akkurat som Deployment har oppe
+  template:
+    metadata:
+      labels:
+        app: mongo
+    # Specification for Pod
+    spec:
+      # Liste av containers som skal være i Poden.
+      ## HUSK: Vanligvis har vi bare en per Pod..
+      # SETUP: Så vi må definere "image" vi vil bruke, og hvilken "port"
+      # * Enkelt forklart: Lager "Pods" med "mongo:5.0" som image
+      containers:
+        # Navnet vi definerer på containeren
+        - name: mongodb
+          # Image vi vil bruke (du finner i docker hub)
+          image: mongo:5.0
+          # Porten hvor container vil listen
+          ports:
+            # 27017 - mongodb hører på DEN porten (står det om imaget i docker hub)
+            - containerPort: 27017
+          # MONGODB er avhengig av BRUKERNAVN og PASSORD for at vi skal kunne bruke applikasjonen
+          ## Så vi må HENTE SECRETS fra vår secrets-config og koble det til miljøet i mongodb
+          # ! HER VI STOPPET... skriv bedre kommentarer slik at det er forståelig
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFROM:
+                secretKeyRef:
+                  # Navnet på Secret config (som du finner i mongo-secret.yml)
+                  name: mongo-secret
+                  # Keyen (variabel navnet) på secret variabel vi vil bruke
+                  key: mongo-user
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFROM:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+# We separate deployment and service with 3 dashes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  # ? Select pods to "forward" the request too. Dette er slik service og pods finner hverandre
+  selector:
+    # Vi skriver "app: mongo"
+    ## fordi dette er LABEL vi ga våre PODS som vi definerte over i deployment config!
+    app: mongo
+  # Husk Service har egen IP adresse, så vi definerer en port for å få tilgang til denne servicen
+  ports:
+    - protocol: TCP
+      # Vi definerer en port vi ønsker
+      # MEN, det er vanlig å bare bruke samme port som "targetPort" for å gjøre ting enklere
+      port: 27017
+      # Port to the PODS i deploymenten (containerPort)
+      # * HUSKE REGEL: "targetPort" SKAL ha samme port som "containerPort" (definert i deployment config over)
+      # Det er til denne porten vi vil Servicen skal FORWARD requesten til
+      targetPort: 27017
+#
+#
+#
+
+# * 1.1 Labels
+# Du kan gi K8s komponenter en LABEL
+# NB: Labels er Key-value pairs
+# Brukes som ID, som burde v're beskrivende og gi mening
+# ! Labels er REQUIRED for PODS, OPTIONAL for deployments men er good practice å ha det
+##### EKSEMPLER PÅ LABELS #####
+# - "release" : "stable"
+# - "env": "dev"
+# - "tier": "frontend"
+# - "release": "canary" (canary er vel den nettleseren kanskje?)
+# - "env" : "production"
+# - "tier" : "backend"
+# * 1.2 Fordel med labels
+# - Hvis ingen label er gitt, så har alle POD replicas unike navn...
+# - Vi bruker label for å navngi PODS. Alle pod replicas vil få SAMME LABEL
+# - Gjør det enkelt å koble Deployment til ALLE POD replicas
+
+# * 2.1 Label Selectors (selector)
+# For å vite hvilken pod som tilhører til deployment.
+# Husk, label er KEY-VALUE pair.. så "key" kan være hvilket som helst navn du vil..
+## Good practice er å bruke "app" som key, til ting som er en applikasjon

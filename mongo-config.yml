@@ -1,0 +1,14 @@
+## ConfigMap config - Holder på URL til vår mongoDB database
+
+apiVersion: v1
+# Type k8s component vi vil lage
+kind: ConfigMap
+metadata:
+  # Navn vi gir denne komponenten vi lager
+  name: mongo-config
+# Key-value pair struktur
+data:
+  # mongo-url: Er key vi definerer selv
+  # mongo-service: Navnet på k8s SERVICE vi lager som skal være endepunktet til MongoDB
+  # NOTE: Når du lager Deployment comp, så kan du refere denne variablen
+  mongo-url: mongo-service

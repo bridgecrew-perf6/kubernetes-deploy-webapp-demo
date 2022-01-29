@@ -1,0 +1,88 @@
+# Deployment and Service comp for vår WEB APP
+# Er vanlig å ha Deployment og Service i samme fil, siden de hører sammen
+
+# Deployment config
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-deployment
+  # ? 1.1 Labels er dypere forklart lenger nede
+  labels:
+    app: webapp
+# Specification for Deployment
+spec:
+  # Hvor mange duplicates vil vi lage av denne deploymenten?
+  replicas: 3
+  # ? 2.1 Selector dypere forklart lenger nede
+  selector:
+    # Leter etter Pods som MATCHER med denne labelen gitt nede
+    matchLabels:
+      app: webapp
+  # Config for Pod - Husk Deployment håndterer Pods
+  # MERK: Pod har sin egen "metadata" og "spec", akkurat som Deployment har oppe
+  template:
+    metadata:
+      labels:
+        app: webapp
+    # Specification for Pod
+    spec:
+      # Liste av containers som skal være i Poden.
+      ## HUSK: Vanligvis har vi bare en per Pod..
+      # SETUP: Så vi må definere "image" vi vil bruke, og hvilken "port"
+      # * Enkelt forklart: Lager "Pods" med "k8s-demo-app" som image
+      containers:
+        # Navnet vi definerer på containeren
+        - name: webapp
+          # Image til web appen (Vi bruker web app image fra kurset)
+          image: nanajanashia/k8s-demo-app
+          # Porten hvor container vil listen
+          ports:
+            # ! HUSK, nodejs app er vanligvis på port 3000
+            - containerPort: 3000
+# We separate deployment and service with 3 dashes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-service
+spec:
+  # ? Select pods to "forward" the request too. Dette er slik service og pods finner hverandre
+  selector:
+    # Vi skriver "app: mongo"
+    ## fordi dette er LABEL vi ga våre PODS som vi definerte over i deployment config!
+    app: webapp
+  # Husk Service har egen IP adresse, så vi definerer en port for å få tilgang til denne servicen
+  ports:
+    - protocol: TCP
+      # Vi definerer en port vi ønsker
+      # MEN, det er vanlig å bare bruke samme port som "targetPort" for å gjøre ting enklere
+      port: 3000
+      # Port to the PODS i deploymenten (containerPort)
+      # * HUSKE REGEL: "targetPort" SKAL ha samme port som "containerPort" (definert i deployment config over)
+      # Det er til denne porten vi vil Servicen skal FORWARD requesten til
+      targetPort: 3000
+#
+#
+#
+
+# * 1.1 Labels
+# Du kan gi K8s komponenter en LABEL
+# NB: Labels er Key-value pairs
+# Brukes som ID, som burde v're beskrivende og gi mening
+# ! Labels er REQUIRED for PODS, OPTIONAL for deployments men er good practice å ha det
+##### EKSEMPLER PÅ LABELS #####
+# - "release" : "stable"
+# - "env": "dev"
+# - "tier": "frontend"
+# - "release": "canary" (canary er vel den nettleseren kanskje?)
+# - "env" : "production"
+# - "tier" : "backend"
+# * 1.2 Fordel med labels
+# - Hvis ingen label er gitt, så har alle POD replicas unike navn...
+# - Vi bruker label for å navngi PODS. Alle pod replicas vil få SAMME LABEL
+# - Gjør det enkelt å koble Deployment til ALLE POD replicas
+
+# * 2.1 Label Selectors (selector)
+# For å vite hvilken pod som tilhører til deployment.
+# Husk, label er KEY-VALUE pair.. så "key" kan være hvilket som helst navn du vil..
+## Good practice er å bruke "app" som key, til ting som er en applikasjon
