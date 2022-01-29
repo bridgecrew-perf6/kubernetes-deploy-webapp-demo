@@ -10,4 +10,4 @@ Eks du vil lage en "deployment" config.
 
 ## Fortsett hvor du slapp
 
-(Tutorial link)[https://youtu.be/s_o8dwzRlu4?t=3392]
+[Tutorial link](https://youtu.be/s_o8dwzRlu4?t=3392)
