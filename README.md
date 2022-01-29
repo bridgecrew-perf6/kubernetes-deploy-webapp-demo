@@ -7,3 +7,7 @@ Eks du vil lage en "deployment" config.
 3. COPY PASTE, og rediger verdier samt legg til verdier
    3.3 Er nice å kopier fra DOCS, fordi da har du bra standpunkt.
    NOTE: K8s komponenter som SECRET, har "type" og du vil bruke forskjellig types avhengig av hva slags type data du vil lagre der. FYI...
+
+## Fortsett hvor du slapp
+
+(Tutorial link)[https://youtu.be/s_o8dwzRlu4?t=3392]
