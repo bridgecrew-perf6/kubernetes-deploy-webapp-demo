@@ -39,19 +39,20 @@ spec:
           ports:
             # 27017 - mongodb hører på DEN porten (står det om imaget i docker hub)
             - containerPort: 27017
-          # MONGODB er avhengig av BRUKERNAVN og PASSORD for at vi skal kunne bruke applikasjonen
+          # MongoDB har noen environment variabler som den forventer fra oss:
+          ## BRUKERNAVN og PASSORD er REQUIRED for at vi skal kunne bruke mongoDB image. En bruker blir generert, og vi bruker legitimasjonen vi sendte
           ## Så vi må HENTE SECRETS fra vår secrets-config og koble det til miljøet i mongodb
-          # ! HER VI STOPPET... skriv bedre kommentarer slik at det er forståelig
           env:
+            # name - Navn på en environment variabel som er i mongoDB
             - name: MONGO_INITDB_ROOT_USERNAME
-              valueFROM:
+              valueFrom:
                 secretKeyRef:
                   # Navnet på Secret config (som du finner i mongo-secret.yml)
                   name: mongo-secret
                   # Keyen (variabel navnet) på secret variabel vi vil bruke
                   key: mongo-user
             - name: MONGO_INITDB_ROOT_PASSWORD
-              valueFROM:
+              valueFrom:
                 secretKeyRef:
                   name: mongo-secret
                   key: mongo-password

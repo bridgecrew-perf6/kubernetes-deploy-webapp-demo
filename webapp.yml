@@ -12,7 +12,7 @@ metadata:
 # Specification for Deployment
 spec:
   # Hvor mange duplicates vil vi lage av denne deploymenten?
-  replicas: 3
+  replicas: 1
   # ? 2.1 Selector dypere forklart lenger nede
   selector:
     # Leter etter Pods som MATCHER med denne labelen gitt nede
@@ -34,11 +34,31 @@ spec:
         # Navnet vi definerer på containeren
         - name: webapp
           # Image til web appen (Vi bruker web app image fra kurset)
-          image: nanajanashia/k8s-demo-app
+          image: nanajanashia/k8s-demo-app:v1.0
           # Porten hvor container vil listen
           ports:
             # ! HUSK, nodejs app er vanligvis på port 3000
             - containerPort: 3000
+          # Kobler web-app med databasen. USER_NAME og USER_PWD er enviornment variabler som er definert i web-app image vi fikk fra kurset
+          env:
+            - name: USER_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-user
+            - name: USER_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+            # Setter opp kobling til DATABASE endepunktet (som vi definerte i mongo-config)
+            ## MERK: Veldig likt som å hente verdi fra SECRET, bare at det er "configMapKeyRef" istedenfor
+            - name: DB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mongo-config
+                  key: mongo-url
+
 # We separate deployment and service with 3 dashes
 ---
 apiVersion: v1
@@ -46,6 +66,9 @@ kind: Service
 metadata:
   name: webapp-service
 spec:
+  # ? 3.1 External service
+  # Setter type "NodePort" slik at vi har gjort denne service EXTERNAL (slik at man kan få tilgang til denne via nettleser f.eks)
+  type: NodePort
   # ? Select pods to "forward" the request too. Dette er slik service og pods finner hverandre
   selector:
     # Vi skriver "app: mongo"
@@ -61,6 +84,10 @@ spec:
       # * HUSKE REGEL: "targetPort" SKAL ha samme port som "containerPort" (definert i deployment config over)
       # Det er til denne porten vi vil Servicen skal FORWARD requesten til
       targetPort: 3000
+      # !NB nodePort MÅ være en verdi mellom disse: 30000 - 32767
+      # - Dette blir porten vi bruker for å få tilgang til web appen poden eksternt
+      # - Så når alt er deployet til "cluster", så kan du få tilgang via cluster sin IP ("minikube ip" i terminal) og :30100 etterpå
+      nodePort: 30100
 #
 #
 #
@@ -86,3 +113,7 @@ spec:
 # For å vite hvilken pod som tilhører til deployment.
 # Husk, label er KEY-VALUE pair.. så "key" kan være hvilket som helst navn du vil..
 ## Good practice er å bruke "app" som key, til ting som er en applikasjon
+
+# * 3.1 External Service setup
+# For å gjøre en service external trenger du kun å legge til to ting:
+## 1. "type" og "nodePort"
